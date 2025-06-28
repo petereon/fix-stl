@@ -1,0 +1,105 @@
+name: Build Tauri App (Cross-Platform)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    env:
+      MESHFIX_SRC: src-tauri/dependencies/meshfix
+      MESHFIX_OUT: src-tauri/dependencies/meshfix/bin64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v2
+
+      # Linux MeshFix build
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake g++ libeigen3-dev
+
+      - name: Build MeshFix (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p $MESHFIX_SRC/build
+          cd $MESHFIX_SRC/build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+          cmake --build . --config Release
+          mkdir -p ../../bin64/linux
+          cp libmeshfix.so ../../bin64/linux/libmeshfix.so
+
+      # macOS MeshFix build
+      - name: Build MeshFix (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir -p $MESHFIX_SRC/build
+          cd $MESHFIX_SRC/build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+          cmake --build . --config Release
+          mkdir -p ../../bin64/macos
+          cp libmeshfix.dylib ../../bin64/macos/libmeshfix.dylib
+
+      # Windows MeshFix build
+      - name: Build MeshFix (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          mkdir $env:MESHFIX_SRC\build
+          cd $env:MESHFIX_SRC\build
+          cmake .. -G \"Visual Studio 17 2022\" -A x64 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+          cmake --build . --config Release
+          mkdir $env:MESHFIX_OUT\windows
+          Copy-Item .\Release\meshfix.dll $env:MESHFIX_OUT\windows\meshfix.dll
+
+      - name: Build Tauri app
+        run: cd src-tauri && cargo build --release
+
+      - name: Build Tauri app
+        run: cd src-tauri && cargo build --release
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli
+
+      - name: Package Tauri app
+        run: npm run tauri build
+
+      - name: Upload Tauri bundle (as workflow artifact)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-bundle-${{ matrix.os }}
+          path: |
+            src-tauri/target/release/bundle/
+
+      - name: Upload Tauri bundle to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/bundle/**/*

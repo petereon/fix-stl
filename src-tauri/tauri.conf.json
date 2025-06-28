@@ -12,15 +12,16 @@
   "app": {
     "windows": [
       {
-        "title": "fix-stl",
-        "width": 800,
-        "height": 600
+        "title": "STL Mesh Fixer",
+        "width": 1200,
+        "height": 800
       }
     ],
     "security": {
       "csp": null
     }
   },
+  "plugins": {},
   "bundle": {
     "active": true,
     "targets": "all",
@@ -30,6 +31,9 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.13"
+    }
   }
 }

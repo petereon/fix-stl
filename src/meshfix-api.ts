@@ -1,4 +1,4 @@
-// Example of how to use the mesh fixing functionality from the frontend
+// API functions for mesh fixing functionality
 
 import { invoke } from '@tauri-apps/api/core';
 

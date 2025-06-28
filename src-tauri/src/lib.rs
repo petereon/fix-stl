@@ -6,6 +6,7 @@ mod tests;
 use meshfix::{fix_mesh, MeshFixOptions, MeshFixResult};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FixMeshOptions {
@@ -25,6 +26,60 @@ pub struct FixMeshResponse {
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+async fn open_file_location(file_path: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        let result = Command::new("open")
+            .args(["-R", &file_path])
+            .output();
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to open file location: {}", e)),
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let result = Command::new("explorer")
+            .args(["/select,", &file_path])
+            .output();
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to open file location: {}", e)),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        let parent = Path::new(&file_path).parent()
+            .ok_or("Invalid file path")?
+            .to_string_lossy();
+
+        let result = Command::new("xdg-open")
+            .arg(&*parent)
+            .output();
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to open file location: {}", e)),
+        }
+    }
+}
+
+#[tauri::command]
+async fn read_stl_file(file_path: String) -> Result<Vec<u8>, String> {
+    match fs::read(&file_path) {
+        Ok(data) => Ok(data),
+        Err(e) => Err(format!("Failed to read file: {}", e)),
+    }
 }
 
 #[tauri::command]
@@ -99,7 +154,8 @@ async fn fix_mesh_file(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, fix_mesh_file])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![greet, fix_mesh_file, read_stl_file, open_file_location])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
