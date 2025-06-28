@@ -1,0 +1,8 @@
+{
+  "identifier": "github.petereon.fix-stl",
+  "bundle": {
+    "macOS": {
+      "frameworks": ["dependencies/meshfix/bin64/macos/libmeshfix.dylib"]
+    }
+  }
+}

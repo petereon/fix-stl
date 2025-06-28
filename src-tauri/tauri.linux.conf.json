@@ -1,0 +1,6 @@
+{
+  "identifier": "github.petereon.fix-stl",
+  "bundle": {
+    "resources": ["dependencies/meshfix/bin64/linux/libmeshfix.so"]
+  }
+}
