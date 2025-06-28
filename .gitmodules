@@ -1,0 +1,3 @@
+[submodule "src-tauri/dependencies/meshfix"]
+	path = src-tauri/dependencies/meshfix
+	url = https://github.com/petereon/MeshFix-V2.1.git
