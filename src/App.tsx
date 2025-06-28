@@ -16,11 +16,6 @@ function App() {
     skip_if_fixed: false,
   });
 
-  // Helper function to extract filename from path
-  const getFileName = (filePath: string) => {
-    return filePath.split('/').pop() || filePath.split('\\').pop() || filePath;
-  };
-
   const handleLoadFile = async () => {
     try {
       const selected = await open({
