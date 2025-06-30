@@ -1,3 +1,7 @@
+# Introduction
+
+STL Mesh Fixer is a tiny desktop application that wraps MeshFix to provide a user-friendly way to fix common STL issues.
+
 # Manual Build Instructions
 
 To build this project manually (outside CI), follow these steps for your platform:
